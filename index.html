@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Taxi Dispatch Simulation</title>
+  <link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+
+
+    <div class="content">
+
+    <h1> Smart Taxi Dispatch </h1>
+
+  <form id="requestForm">
+    <label>Request Position:</label>
+    <input type="number" id="position" required>
+
+    <label>Request Duration:</label>
+    <input type="number" id="duration" required>
+
+    <label>Request Time:</label>
+    <input type="number" id="time" required>
+
+    <button type="submit">Add Request</button>
+  </form>
+
+  <button id="simulateBtn">Run Application</button>
+
+  <div id="output"></div>
+
+
+  
+
+
+<!-- // end div -->
+</div>
+
+
+  <footer >
+    <p>By ACHRAF OUTAMGHART</p>
+  </footer>
+  <script>
+    const output = document.getElementById("output");
+
+    
+
+    // function print output
+    function log(message) {
+      output.textContent += message + "\n";
+    }
+
+    // Data initialization
+    let Taxis = [
+      { id: 1, position: 5, available: true, timeRemaining: 0, totalRides: 0 },
+      { id: 2, position: 12, available: true, timeRemaining: 0, totalRides: 0 },
+      { id: 3, position: 20, available: true, timeRemaining: 0, totalRides: 0 }
+    ];
+
+    let Requests = [
+      { reqId: 1, position: 10, duration: 3, time: 0 },
+      { reqId: 2, position: 3, duration: 4, time: 2 },
+      { reqId: 3, position: 18, duration: 2, time: 4 },
+      { reqId: 4, position: 7, duration: 5, time: 5 }
+    ];
+
+    let waitingQueue = [];
+
+    // new request form
+    document.getElementById("requestForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+       document.getElementById("output").style.display = "block" ;
+      try {
+        let newPosition = Number(document.getElementById("position").value);
+        let newDuration = Number(document.getElementById("duration").value);
+        let newTime = Number(document.getElementById("time").value);
+
+        if (isNaN(newPosition) || isNaN(newDuration) || isNaN(newTime)) {
+          throw new Error("Please enter valid numbers.");
+        }
+
+        Requests.push({
+          reqId: Requests.length + 1,
+          position: newPosition,
+          duration: newDuration,
+          time: newTime
+        });
+
+        log(` Request : Position ${newPosition}, Duration ${newDuration}, Time ${newTime}`);
+        this.reset();
+      } catch (err) {
+        log( err.message);
+      }
+    });
+
+    // Simulation logic
+function findTaxi(request) {
+  let closestTaxi = null;
+  let minDistance = Infinity;
+
+  for (let i = 0; i < Taxis.length; i++) {
+    let taxi = Taxis[i];
+
+    if (taxi.available) {
+      let distance = Math.abs(taxi.position - request.position);
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestTaxi = taxi;
+      }
+    }
+  }
+
+  return closestTaxi;
+}
+
+function assignTaxi(taxi, request, minute) {
+      try {
+        if (!taxi || !request) {
+            throw new Error("Taxi or request not valid");
+        }
+
+        taxi.available = false;
+        taxi.timeRemaining = request.duration;
+        taxi.totalRides++;
+        log(`Minute ${minute}: Request ${request.reqId} assigned to Taxi ${taxi.id} (distance ${Math.abs(taxi.position - request.position)})`);
+        taxi.position = request.position;
+      } catch (err) {
+        log(err.message);
+      }
+    }
+
+function updateTaxis(minute) {
+  for (let i = 0; i < Taxis.length; i++) {
+    let taxi = Taxis[i];
+
+    if (!taxi.available && taxi.timeRemaining > 0) {
+      taxi.timeRemaining--;
+
+      if (taxi.timeRemaining === 0) {
+        taxi.available = true;
+        log(`Minute ${minute}: Taxi ${taxi.id} is now free at position ${taxi.position}`);
+
+        if (waitingQueue.length > 0) {
+          let req = waitingQueue.shift();
+          assignTaxi(taxi, req, minute);
+        }
+      }
+    }
+  }
+}
+
+
+document.getElementById("simulateBtn").addEventListener("click", function() {
+    document.getElementById("output").style.display = "block" ;
+      log("--- Simulation Started --- ");
+      let minute = 0;
+
+      while (Requests.length > 0) {
+        updateTaxis(minute);
+        for (let i = 0; i < Requests.length; i++) {
+          let req = Requests[i];
+          if (req.time === minute) {
+            let taxi = findTaxi(req);
+            if (taxi) {
+              assignTaxi(taxi, req, minute);
+            } else {
+              waitingQueue.push(req);
+              log(`Minute ${minute}: Request ${req.reqId} added to waiting queue`);
+            }
+            Requests.splice(i, 1);
+            i--;
+          }
+        }
+        minute++;
+        if (minute > 100) break; 
+      }
+
+      log("---Final Report ---");
+      let totalRides = 0;
+      for (let taxi of Taxis) {
+        log(`Taxi ${taxi.id}: ${taxi.totalRides} ride(s), final position ${taxi.position}`);
+        totalRides += taxi.totalRides;
+      }
+      log(`Total rides: ${totalRides}`);
+      log(`Total simulated time: ${minute} minutes`);
+    });
+  </script>
+
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
